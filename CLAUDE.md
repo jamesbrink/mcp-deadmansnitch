@@ -1,93 +1,65 @@
-# Dead Man's Snitch MCP Server - Claude Instructions
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Dead Man's Snitch MCP Server
 
 This MCP server provides tools to interact with Dead Man's Snitch, a monitoring service for scheduled tasks and cron jobs.
 
-## Key Information
+## Essential Commands
 
-- **API Authentication**: The server uses HTTP Basic Authentication with the API key as the username
-- **Check-ins**: Check-ins are sent to a unique URL for each snitch (not through the API)
-- **Intervals**: Valid intervals are `15_minute`, `hourly`, `daily`, `weekly`, `monthly`
-- **Alert Types**: Can be `basic` or `smart`
+```bash
+# Run tests
+uv run pytest -v
+uv run pytest tests/test_client.py::TestClass::test_method  # Run single test
 
-## Important Commands
+# Type checking and linting
+uv run mypy src/
+uv run ruff check
+uv run ruff format
 
-When working with this codebase:
-
-1. **Run tests**: `uv run pytest -v`
-2. **Type checking**: `uv run mypy src/`
-3. **Linting**: `uv run ruff check`
-4. **Format code**: `uv run ruff format`
-5. **Run server**: `uv run mcp-deadmansnitch`
-
-## Tool Usage Examples
-
-### Listing Snitches
-```
-Use list_snitches to see all monitoring tasks
-- Filter by tags: list_snitches(tags=["production", "critical"])
-- Returns: Array of snitches with their status
+# Run server
+uv run mcp-deadmansnitch
 ```
 
-### Creating a Snitch
-```
-Use create_snitch to set up new monitoring
-- Required: name and interval
-- Optional: notes, tags, alert_type, alert_email
-- Example: create_snitch(name="Daily Backup", interval="daily", tags=["backup"])
-```
+## Architecture Overview
 
-### Checking In
-```
-Use check_in to signal task completion
-- Requires: token (from snitch details)
-- Optional: message about the check-in
-- Example: check_in(token="abc123", message="Backup completed: 5GB")
-```
+The codebase follows a standard MCP server structure:
 
-### Managing Snitches
-```
-- Pause during maintenance: pause_snitch(token="abc123", until="2h")
-- Update configuration: update_snitch(token="abc123", interval="hourly")
-- Manage tags: add_tags(token="abc123", tags=["new-tag"])
-- Delete when no longer needed: delete_snitch(token="abc123")
-```
+- **`src/mcp_deadmansnitch/server.py`**: Main MCP server implementation using the `mcp` framework. Handles tool registration and request routing.
+- **`src/mcp_deadmansnitch/client.py`**: HTTP client for Dead Man's Snitch API. Implements all API interactions with proper authentication and error handling.
+- **`main.py`**: Entry point that starts the server with stdio transport.
 
-## Best Practices
+### Key Design Patterns
 
-1. **Tag Organization**: Use consistent tags like `production`, `staging`, `critical`, `backup`
-2. **Interval Selection**: Choose intervals that match your task frequency with some buffer
-3. **Alert Emails**: Keep alert email lists updated when team members change
-4. **Pause vs Delete**: Pause snitches during known maintenance windows instead of deleting
-5. **Check-in Messages**: Include useful context in check-in messages for debugging
+1. **API Authentication**: Uses HTTP Basic Auth with API key as username (no password)
+2. **Response Format**: All tools return consistent `{"success": bool, "data": ..., "error": ...}` format
+3. **Error Handling**: API errors are caught and wrapped with context
+4. **Check-in URLs**: Check-ins use separate URLs (https://nosnch.in/{token}) not the main API
 
-## Common Workflows
+### Available Tools
 
-### Setting up monitoring for a new cron job
-1. Create snitch with appropriate interval
-2. Note the check-in URL from the response
-3. Add curl command to end of cron job: `curl https://nosnch.in/TOKEN`
+- `list_snitches`: Get all snitches with optional tag filtering
+- `get_snitch`: Get details for a specific snitch by token
+- `create_snitch`: Create new snitch (required: name, interval)
+- `update_snitch`: Update snitch configuration
+- `delete_snitch`: Delete a snitch
+- `pause_snitch`: Temporarily pause monitoring
+- `check_in`: Send check-in signal to snitch URL
+- `add_tags`/`remove_tags`: Manage snitch tags
 
-### Investigating missed check-ins
-1. Get snitch details to see last check-in time
-2. Check snitch status (healthy, pending, or failed)
-3. Review any check-in messages for context
+### Valid Intervals
 
-### Bulk operations
-1. List snitches with specific tags
-2. Update multiple snitches using loops
-3. Pause all snitches with a specific tag during deployment
+`15_minute`, `hourly`, `daily`, `weekly`, `monthly`
 
-## Error Handling
+## Testing Strategy
 
-The server returns consistent error responses:
-- `success: false` indicates an error occurred
-- `error` field contains the error message
-- HTTP errors from the API are wrapped with context
+- **Unit tests** (`test_client.py`): Test individual client methods with mocked API responses
+- **Integration tests** (`test_integration.py`): Test server tool handlers
+- **All API calls should be mocked** to avoid rate limits and dependency on external service
 
-## Testing
+## API Endpoints
 
-When adding new features:
-1. Add unit tests to `test_client.py`
-2. Add integration tests to `test_integration.py`
-3. Ensure all tools follow the same response format
-4. Mock external API calls to avoid rate limits
+- Base URL: `https://api.deadmanssnitch.com/v1/`
+- Authentication: Basic Auth with API key
+- Check-in URL: `https://nosnch.in/{token}` (separate from API)

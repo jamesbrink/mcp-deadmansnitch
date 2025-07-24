@@ -4,14 +4,22 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from mcp_deadmansnitch.client import DeadMansSnitchClient, DeadMansSnitchError
+from mcp_deadmansnitch.client import DeadMansSnitchError
 from mcp_deadmansnitch.server import (
+    AddTagsParams,
     CheckInParams,
     CreateSnitchParams,
+    DeleteSnitchParams,
     GetSnitchParams,
     ListSnitchesParams,
     PauseSnitchParams,
+    RemoveTagParams,
     UnpauseSnitchParams,
+    UpdateSnitchParams,
+    add_tags_impl,
+    delete_snitch_impl,
+    remove_tag_impl,
+    update_snitch_impl,
 )
 from mcp_deadmansnitch.server import (
     check_in_impl as check_in,
@@ -285,24 +293,120 @@ class TestUnpauseSnitch:
         assert result["error"] == "Not paused"
 
 
-class TestDeadMansSnitchClient:
-    """Tests for the DeadMansSnitchClient class."""
+# Tests for new MCP tools moved from test_new_features.py
+class TestNewMCPTools:
+    """Test new MCP tool implementations."""
 
-    def test_client_initialization_with_api_key(self):
-        """Test client initialization with provided API key."""
-        client = DeadMansSnitchClient(api_key="test_key")
-        assert client.api_key == "test_key"
-        assert client.auth == ("test_key", "")  # HTTP Basic Auth
+    @pytest.fixture
+    def mock_client(self):
+        """Mock the Dead Man's Snitch client."""
+        with patch("mcp_deadmansnitch.server.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_get_client.return_value = mock_client
+            yield mock_client
 
-    def test_client_initialization_from_env(self, monkeypatch):
-        """Test client initialization from environment variable."""
-        monkeypatch.setenv("DEADMANSNITCH_API_KEY", "env_key")
-        client = DeadMansSnitchClient()
-        assert client.api_key == "env_key"
-        assert client.auth == ("env_key", "")  # HTTP Basic Auth
+    async def test_update_snitch_tool(self, mock_client):
+        """Test update_snitch MCP tool."""
+        # Setup
+        mock_snitch = {
+            "token": "abc123",
+            "name": "Updated via Tool",
+            "interval": "15_minute",
+        }
+        mock_client.update_snitch = AsyncMock(return_value=mock_snitch)
 
-    def test_client_initialization_no_key(self, monkeypatch):
-        """Test client initialization without API key."""
-        monkeypatch.delenv("DEADMANSNITCH_API_KEY", raising=False)
-        with pytest.raises(ValueError, match="API key must be provided"):
-            DeadMansSnitchClient()
+        # Execute
+        params = UpdateSnitchParams(
+            token="abc123", name="Updated via Tool", interval="15_minute"
+        )
+        result = await update_snitch_impl(params)
+
+        # Verify
+        assert result["success"] is True
+        assert result["message"] == "Snitch updated successfully"
+        assert result["snitch"] == mock_snitch
+        mock_client.update_snitch.assert_called_once_with(
+            token="abc123",
+            name="Updated via Tool",
+            interval="15_minute",
+            notes=None,
+            tags=None,
+            alert_type=None,
+            alert_email=None,
+        )
+
+    async def test_delete_snitch_tool(self, mock_client):
+        """Test delete_snitch MCP tool."""
+        # Setup
+        mock_client.delete_snitch = AsyncMock(
+            return_value={"status": "deleted", "token": "abc123"}
+        )
+
+        # Execute
+        params = DeleteSnitchParams(token="abc123")
+        result = await delete_snitch_impl(params)
+
+        # Verify
+        assert result["success"] is True
+        assert result["message"] == "Snitch deleted successfully"
+        assert result["result"]["status"] == "deleted"
+
+    async def test_add_tags_tool(self, mock_client):
+        """Test add_tags MCP tool."""
+        # Setup
+        mock_snitch = {"token": "abc123", "tags": ["old", "new1", "new2"]}
+        mock_client.add_tags = AsyncMock(return_value=mock_snitch)
+
+        # Execute
+        params = AddTagsParams(token="abc123", tags=["new1", "new2"])
+        result = await add_tags_impl(params)
+
+        # Verify
+        assert result["success"] is True
+        assert result["message"] == "Added 2 tags successfully"
+        assert result["snitch"] == mock_snitch
+
+    async def test_remove_tag_tool(self, mock_client):
+        """Test remove_tag MCP tool."""
+        # Setup
+        mock_snitch = {"token": "abc123", "tags": ["tag1", "tag3"]}
+        mock_client.remove_tag = AsyncMock(return_value=mock_snitch)
+
+        # Execute
+        params = RemoveTagParams(token="abc123", tag="tag2")
+        result = await remove_tag_impl(params)
+
+        # Verify
+        assert result["success"] is True
+        assert result["message"] == "Tag 'tag2' removed successfully"
+        assert result["snitch"] == mock_snitch
+
+    async def test_error_handling_consistency(self, mock_client):
+        """Test error handling is consistent across new tools."""
+        error_msg = "Network timeout"
+
+        # Test each new tool
+        tools_and_params = [
+            (
+                update_snitch_impl,
+                UpdateSnitchParams(token="abc", name="Test"),
+                "update_snitch",
+            ),
+            (delete_snitch_impl, DeleteSnitchParams(token="abc"), "delete_snitch"),
+            (add_tags_impl, AddTagsParams(token="abc", tags=["t1"]), "add_tags"),
+            (remove_tag_impl, RemoveTagParams(token="abc", tag="t1"), "remove_tag"),
+        ]
+
+        for tool_func, params, method_name in tools_and_params:
+            # Setup mock to raise error
+            getattr(mock_client, method_name).side_effect = DeadMansSnitchError(
+                error_msg
+            )
+
+            # Execute
+            result = await tool_func(params)
+
+            # Verify consistent error format
+            assert result["success"] is False
+            assert result["error"] == error_msg
+            assert len(result) == 2  # Only success and error fields
