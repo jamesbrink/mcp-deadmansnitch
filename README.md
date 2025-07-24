@@ -1,9 +1,10 @@
 # MCP Dead Man's Snitch
 
-[![PyPI version](https://badge.fury.io/py/mcp-deadmansnitch.svg)](https://pypi.org/project/mcp-deadmansnitch/)
+[![PyPI version](https://img.shields.io/pypi/v/mcp-deadmansnitch.svg)](https://pypi.org/project/mcp-deadmansnitch/)
 [![Python](https://img.shields.io/pypi/pyversions/mcp-deadmansnitch.svg)](https://pypi.org/project/mcp-deadmansnitch/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/jamesbrink/mcp-deadmansnitch/actions/workflows/ci.yml/badge.svg)](https://github.com/jamesbrink/mcp-deadmansnitch/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/jamesbrink/mcp-deadmansnitch/graph/badge.svg)](https://codecov.io/gh/jamesbrink/mcp-deadmansnitch)
 
 A Model Context Protocol (MCP) server for [Dead Man's Snitch](https://deadmanssnitch.com/) monitoring service. This server enables AI assistants like Claude to interact with Dead Man's Snitch to monitor scheduled tasks and cron jobs.
 
