@@ -70,6 +70,11 @@ class DeadMansSnitchClient:
                 data: list[dict[str, Any]] = response.json()
                 return data
             except httpx.HTTPStatusError as e:
+                if e.response.status_code == 401:
+                    raise DeadMansSnitchError(
+                        "Authentication failed: Invalid API key. "
+                        "Please check your DEADMANSNITCH_API_KEY."
+                    ) from e
                 raise DeadMansSnitchError(
                     f"Failed to list snitches: "
                     f"{e.response.status_code} - {e.response.text}"
@@ -98,6 +103,11 @@ class DeadMansSnitchClient:
                 data: dict[str, Any] = response.json()
                 return data
             except httpx.HTTPStatusError as e:
+                if e.response.status_code == 401:
+                    raise DeadMansSnitchError(
+                        "Authentication failed: Invalid API key. "
+                        "Please check your DEADMANSNITCH_API_KEY."
+                    ) from e
                 raise DeadMansSnitchError(
                     f"Failed to get snitch: "
                     f"{e.response.status_code} - {e.response.text}"
@@ -200,6 +210,11 @@ class DeadMansSnitchClient:
                 result: dict[str, Any] = response.json()
                 return result
             except httpx.HTTPStatusError as e:
+                if e.response.status_code == 401:
+                    raise DeadMansSnitchError(
+                        "Authentication failed: Invalid API key. "
+                        "Please check your DEADMANSNITCH_API_KEY."
+                    ) from e
                 raise DeadMansSnitchError(
                     f"Failed to create snitch: "
                     f"{e.response.status_code} - {e.response.text}"

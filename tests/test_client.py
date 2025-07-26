@@ -88,7 +88,7 @@ class TestDeadMansSnitchClient:
         # Execute and verify
         with pytest.raises(DeadMansSnitchError) as exc_info:
             await client.list_snitches()
-        assert "Failed to list snitches: 401 - Unauthorized" in str(exc_info.value)
+        assert "Authentication failed: Invalid API key" in str(exc_info.value)
 
     async def test_get_snitch_success(self, client, mock_async_client):
         """Test successfully getting a snitch."""
