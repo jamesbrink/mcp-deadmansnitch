@@ -6,16 +6,6 @@ import pytest
 
 from mcp_deadmansnitch.client import DeadMansSnitchError
 from mcp_deadmansnitch.server import (
-    AddTagsParams,
-    CheckInParams,
-    CreateSnitchParams,
-    DeleteSnitchParams,
-    GetSnitchParams,
-    ListSnitchesParams,
-    PauseSnitchParams,
-    RemoveTagParams,
-    UnpauseSnitchParams,
-    UpdateSnitchParams,
     add_tags_impl,
     delete_snitch_impl,
     remove_tag_impl,
@@ -61,8 +51,7 @@ class TestListSnitches:
         ]
         mock_client.list_snitches = AsyncMock(return_value=mock_snitches)
 
-        params = ListSnitchesParams(tags=["production"])
-        result = await list_snitches(params)
+        result = await list_snitches(tags=["production"])
 
         assert result["success"] is True
         assert result["count"] == 2
@@ -74,8 +63,7 @@ class TestListSnitches:
         mock_snitches = []
         mock_client.list_snitches = AsyncMock(return_value=mock_snitches)
 
-        params = ListSnitchesParams()
-        result = await list_snitches(params)
+        result = await list_snitches()
 
         assert result["success"] is True
         assert result["count"] == 0
@@ -88,8 +76,7 @@ class TestListSnitches:
             side_effect=DeadMansSnitchError("API error")
         )
 
-        params = ListSnitchesParams()
-        result = await list_snitches(params)
+        result = await list_snitches()
 
         assert result["success"] is False
         assert result["error"] == "API error"
@@ -108,8 +95,7 @@ class TestGetSnitch:
         }
         mock_client.get_snitch = AsyncMock(return_value=mock_snitch)
 
-        params = GetSnitchParams(token="abc123")
-        result = await get_snitch(params)
+        result = await get_snitch(token="abc123")
 
         assert result["success"] is True
         assert result["snitch"] == mock_snitch
@@ -121,8 +107,7 @@ class TestGetSnitch:
             side_effect=DeadMansSnitchError("Snitch not found")
         )
 
-        params = GetSnitchParams(token="invalid")
-        result = await get_snitch(params)
+        result = await get_snitch(token="invalid")
 
         assert result["success"] is False
         assert result["error"] == "Snitch not found"
@@ -136,8 +121,7 @@ class TestCheckIn:
         mock_response = {"status": "ok", "checked_in_at": "2025-01-24T12:00:00Z"}
         mock_client.check_in = AsyncMock(return_value=mock_response)
 
-        params = CheckInParams(token="abc123", message="All systems operational")
-        result = await check_in(params)
+        result = await check_in(token="abc123", message="All systems operational")
 
         assert result["success"] is True
         assert result["message"] == "Check-in successful"
@@ -151,8 +135,7 @@ class TestCheckIn:
         mock_response = {"status": "ok"}
         mock_client.check_in = AsyncMock(return_value=mock_response)
 
-        params = CheckInParams(token="abc123")
-        result = await check_in(params)
+        result = await check_in(token="abc123")
 
         assert result["success"] is True
         mock_client.check_in.assert_called_once_with("abc123", None)
@@ -163,8 +146,7 @@ class TestCheckIn:
             side_effect=DeadMansSnitchError("Check-in failed")
         )
 
-        params = CheckInParams(token="abc123")
-        result = await check_in(params)
+        result = await check_in(token="abc123")
 
         assert result["success"] is False
         assert result["error"] == "Check-in failed"
@@ -183,14 +165,13 @@ class TestCreateSnitch:
         }
         mock_client.create_snitch = AsyncMock(return_value=mock_snitch)
 
-        params = CreateSnitchParams(
+        result = await create_snitch(
             name="New Snitch",
             interval="hourly",
             notes="Test notes",
             tags=["test", "dev"],
             alert_type="smart",
         )
-        result = await create_snitch(params)
 
         assert result["success"] is True
         assert result["message"] == "Snitch created successfully"
@@ -209,8 +190,7 @@ class TestCreateSnitch:
         mock_snitch = {"token": "new123", "name": "Basic Snitch"}
         mock_client.create_snitch = AsyncMock(return_value=mock_snitch)
 
-        params = CreateSnitchParams(name="Basic Snitch", interval="daily")
-        result = await create_snitch(params)
+        result = await create_snitch(name="Basic Snitch", interval="daily")
 
         assert result["success"] is True
         mock_client.create_snitch.assert_called_once_with(
@@ -228,8 +208,7 @@ class TestCreateSnitch:
             side_effect=DeadMansSnitchError("Invalid interval")
         )
 
-        params = CreateSnitchParams(name="Bad Snitch", interval="invalid")
-        result = await create_snitch(params)
+        result = await create_snitch(name="Bad Snitch", interval="invalid")
 
         assert result["success"] is False
         assert result["error"] == "Invalid interval"
@@ -243,8 +222,7 @@ class TestPauseSnitch:
         mock_snitch = {"token": "abc123", "name": "Test Snitch", "status": "paused"}
         mock_client.pause_snitch = AsyncMock(return_value=mock_snitch)
 
-        params = PauseSnitchParams(token="abc123")
-        result = await pause_snitch(params)
+        result = await pause_snitch(token="abc123")
 
         assert result["success"] is True
         assert result["message"] == "Snitch paused successfully"
@@ -257,8 +235,7 @@ class TestPauseSnitch:
             side_effect=DeadMansSnitchError("Already paused")
         )
 
-        params = PauseSnitchParams(token="abc123")
-        result = await pause_snitch(params)
+        result = await pause_snitch(token="abc123")
 
         assert result["success"] is False
         assert result["error"] == "Already paused"
@@ -272,8 +249,7 @@ class TestUnpauseSnitch:
         mock_snitch = {"token": "abc123", "name": "Test Snitch", "status": "healthy"}
         mock_client.unpause_snitch = AsyncMock(return_value=mock_snitch)
 
-        params = UnpauseSnitchParams(token="abc123")
-        result = await unpause_snitch(params)
+        result = await unpause_snitch(token="abc123")
 
         assert result["success"] is True
         assert result["message"] == "Snitch unpaused successfully"
@@ -286,8 +262,7 @@ class TestUnpauseSnitch:
             side_effect=DeadMansSnitchError("Not paused")
         )
 
-        params = UnpauseSnitchParams(token="abc123")
-        result = await unpause_snitch(params)
+        result = await unpause_snitch(token="abc123")
 
         assert result["success"] is False
         assert result["error"] == "Not paused"
@@ -316,10 +291,9 @@ class TestNewMCPTools:
         mock_client.update_snitch = AsyncMock(return_value=mock_snitch)
 
         # Execute
-        params = UpdateSnitchParams(
+        result = await update_snitch_impl(
             token="abc123", name="Updated via Tool", interval="15_minute"
         )
-        result = await update_snitch_impl(params)
 
         # Verify
         assert result["success"] is True
@@ -343,8 +317,7 @@ class TestNewMCPTools:
         )
 
         # Execute
-        params = DeleteSnitchParams(token="abc123")
-        result = await delete_snitch_impl(params)
+        result = await delete_snitch_impl(token="abc123")
 
         # Verify
         assert result["success"] is True
@@ -358,8 +331,7 @@ class TestNewMCPTools:
         mock_client.add_tags = AsyncMock(return_value=mock_snitch)
 
         # Execute
-        params = AddTagsParams(token="abc123", tags=["new1", "new2"])
-        result = await add_tags_impl(params)
+        result = await add_tags_impl(token="abc123", tags=["new1", "new2"])
 
         # Verify
         assert result["success"] is True
@@ -373,8 +345,7 @@ class TestNewMCPTools:
         mock_client.remove_tag = AsyncMock(return_value=mock_snitch)
 
         # Execute
-        params = RemoveTagParams(token="abc123", tag="tag2")
-        result = await remove_tag_impl(params)
+        result = await remove_tag_impl(token="abc123", tag="tag2")
 
         # Verify
         assert result["success"] is True
@@ -386,25 +357,25 @@ class TestNewMCPTools:
         error_msg = "Network timeout"
 
         # Test each new tool
-        tools_and_params = [
+        tools_and_args = [
             (
                 update_snitch_impl,
-                UpdateSnitchParams(token="abc", name="Test"),
+                {"token": "abc", "name": "Test"},
                 "update_snitch",
             ),
-            (delete_snitch_impl, DeleteSnitchParams(token="abc"), "delete_snitch"),
-            (add_tags_impl, AddTagsParams(token="abc", tags=["t1"]), "add_tags"),
-            (remove_tag_impl, RemoveTagParams(token="abc", tag="t1"), "remove_tag"),
+            (delete_snitch_impl, {"token": "abc"}, "delete_snitch"),
+            (add_tags_impl, {"token": "abc", "tags": ["t1"]}, "add_tags"),
+            (remove_tag_impl, {"token": "abc", "tag": "t1"}, "remove_tag"),
         ]
 
-        for tool_func, params, method_name in tools_and_params:
+        for tool_func, kwargs, method_name in tools_and_args:
             # Setup mock to raise error
             getattr(mock_client, method_name).side_effect = DeadMansSnitchError(
                 error_msg
             )
 
             # Execute
-            result = await tool_func(params)
+            result = await tool_func(**kwargs)
 
             # Verify consistent error format
             assert result["success"] is False

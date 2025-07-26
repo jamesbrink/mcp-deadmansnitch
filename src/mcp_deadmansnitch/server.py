@@ -5,7 +5,6 @@ from functools import wraps
 from typing import Any, TypeVar
 
 from fastmcp import FastMCP
-from pydantic import BaseModel, Field
 
 from .client import DeadMansSnitchClient, DeadMansSnitchError
 
@@ -45,91 +44,6 @@ def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
-# Pydantic models for tool parameters
-class ListSnitchesParams(BaseModel):
-    """Parameters for listing snitches."""
-
-    tags: list[str] | None = Field(
-        None,
-        description="Optional list of tags to filter snitches",
-    )
-
-
-class GetSnitchParams(BaseModel):
-    """Parameters for getting a snitch."""
-
-    token: str = Field(
-        ...,
-        description="The snitch token",
-    )
-
-
-class CheckInParams(BaseModel):
-    """Parameters for checking in a snitch."""
-
-    token: str = Field(
-        ...,
-        description="The snitch token",
-    )
-    message: str | None = Field(
-        None,
-        description="Optional message to include with check-in",
-    )
-
-
-class CreateSnitchParams(BaseModel):
-    """Parameters for creating a snitch."""
-
-    name: str = Field(
-        ...,
-        description="Name of the snitch",
-    )
-    interval: str = Field(
-        ...,
-        description="Check-in interval (e.g., '15_minute', 'hourly', 'daily', "
-        "'weekly', 'monthly')",
-    )
-    notes: str | None = Field(
-        None,
-        description="Optional notes about the snitch",
-    )
-    tags: list[str] | None = Field(
-        None,
-        description="Optional list of tags",
-    )
-    alert_type: str = Field(
-        "basic",
-        description="Alert type ('basic' or 'smart')",
-    )
-    alert_email: list[str] | None = Field(
-        None,
-        description="Optional list of email addresses for alerts",
-    )
-
-
-class PauseSnitchParams(BaseModel):
-    """Parameters for pausing a snitch."""
-
-    token: str = Field(
-        ...,
-        description="The snitch token",
-    )
-    until: str | None = Field(
-        None,
-        description="Optional timestamp or duration to pause until "
-        "(e.g., '2025-01-25T12:00:00Z' or '24h')",
-    )
-
-
-class UnpauseSnitchParams(BaseModel):
-    """Parameters for unpausing a snitch."""
-
-    token: str = Field(
-        ...,
-        description="The snitch token",
-    )
-
-
 # Client instance (created lazily)
 _client: DeadMansSnitchClient | None = None
 
@@ -154,13 +68,13 @@ def get_client() -> DeadMansSnitchClient:
 
 
 @handle_errors
-async def list_snitches_impl(params: ListSnitchesParams) -> dict[str, Any]:
+async def list_snitches_impl(tags: list[str] | None = None) -> dict[str, Any]:
     """List all snitches with optional tag filtering.
 
     Returns a list of all snitches in your Dead Man's Snitch account.
     You can optionally filter by tags to see only snitches with specific tags.
     """
-    snitches = await get_client().list_snitches(tags=params.tags)
+    snitches = await get_client().list_snitches(tags=tags)
     return {
         "success": True,
         "count": len(snitches),
@@ -169,23 +83,26 @@ async def list_snitches_impl(params: ListSnitchesParams) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def list_snitches(params: ListSnitchesParams) -> dict[str, Any]:
+async def list_snitches(tags: list[str] | None = None) -> dict[str, Any]:
     """List all snitches with optional tag filtering.
 
     Returns a list of all snitches in your Dead Man's Snitch account.
     You can optionally filter by tags to see only snitches with specific tags.
+
+    Args:
+        tags: Optional list of tags to filter snitches
     """
-    return await list_snitches_impl(params)  # type: ignore[no-any-return]
+    return await list_snitches_impl(tags=tags)  # type: ignore[no-any-return]
 
 
 @handle_errors
-async def get_snitch_impl(params: GetSnitchParams) -> dict[str, Any]:
+async def get_snitch_impl(token: str) -> dict[str, Any]:
     """Get details of a specific snitch by token.
 
     Retrieves comprehensive information about a single snitch including
     its status, check-in history, and configuration.
     """
-    snitch = await get_client().get_snitch(params.token)
+    snitch = await get_client().get_snitch(token)
     return {
         "success": True,
         "snitch": snitch,
@@ -193,24 +110,27 @@ async def get_snitch_impl(params: GetSnitchParams) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def get_snitch(params: GetSnitchParams) -> dict[str, Any]:
+async def get_snitch(token: str) -> dict[str, Any]:
     """Get details of a specific snitch by token.
 
     Retrieves comprehensive information about a single snitch including
     its status, check-in history, and configuration.
+
+    Args:
+        token: The snitch token
     """
-    return await get_snitch_impl(params)  # type: ignore[no-any-return]
+    return await get_snitch_impl(token)  # type: ignore[no-any-return]
 
 
 @handle_errors
-async def check_in_impl(params: CheckInParams) -> dict[str, Any]:
+async def check_in_impl(token: str, message: str | None = None) -> dict[str, Any]:
     """Check in (ping) a snitch.
 
     Sends a check-in signal to a snitch to indicate that the monitored
     task is still running. You can optionally include a message with
     the check-in for logging purposes.
     """
-    result = await get_client().check_in(params.token, params.message)
+    result = await get_client().check_in(token, message)
     return {
         "success": True,
         "message": "Check-in successful",
@@ -219,18 +139,29 @@ async def check_in_impl(params: CheckInParams) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def check_in(params: CheckInParams) -> dict[str, Any]:
+async def check_in(token: str, message: str | None = None) -> dict[str, Any]:
     """Check in (ping) a snitch.
 
     Sends a check-in signal to a snitch to indicate that the monitored
     task is still running. You can optionally include a message with
     the check-in for logging purposes.
+
+    Args:
+        token: The snitch token
+        message: Optional message to include with check-in
     """
-    return await check_in_impl(params)  # type: ignore[no-any-return]
+    return await check_in_impl(token, message)  # type: ignore[no-any-return]
 
 
 @handle_errors
-async def create_snitch_impl(params: CreateSnitchParams) -> dict[str, Any]:
+async def create_snitch_impl(
+    name: str,
+    interval: str,
+    notes: str | None = None,
+    tags: list[str] | None = None,
+    alert_type: str = "basic",
+    alert_email: list[str] | None = None,
+) -> dict[str, Any]:
     """Create a new snitch.
 
     Creates a new Dead Man's Snitch monitor with the specified configuration.
@@ -244,12 +175,12 @@ async def create_snitch_impl(params: CreateSnitchParams) -> dict[str, Any]:
     - 'monthly': Every month
     """
     snitch = await get_client().create_snitch(
-        name=params.name,
-        interval=params.interval,
-        notes=params.notes,
-        tags=params.tags,
-        alert_type=params.alert_type,
-        alert_email=params.alert_email,
+        name=name,
+        interval=interval,
+        notes=notes,
+        tags=tags,
+        alert_type=alert_type,
+        alert_email=alert_email,
     )
     return {
         "success": True,
@@ -259,7 +190,14 @@ async def create_snitch_impl(params: CreateSnitchParams) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def create_snitch(params: CreateSnitchParams) -> dict[str, Any]:
+async def create_snitch(
+    name: str,
+    interval: str,
+    notes: str | None = None,
+    tags: list[str] | None = None,
+    alert_type: str = "basic",
+    alert_email: list[str] | None = None,
+) -> dict[str, Any]:
     """Create a new snitch.
 
     Creates a new Dead Man's Snitch monitor with the specified configuration.
@@ -271,19 +209,35 @@ async def create_snitch(params: CreateSnitchParams) -> dict[str, Any]:
     - 'daily': Every day
     - 'weekly': Every week
     - 'monthly': Every month
+
+    Args:
+        name: Name of the snitch
+        interval: Check-in interval ('15_minute', 'hourly', 'daily',
+            'weekly', 'monthly')
+        notes: Optional notes about the snitch
+        tags: Optional list of tags
+        alert_type: Alert type ('basic' or 'smart')
+        alert_email: Optional list of email addresses for alerts
     """
-    return await create_snitch_impl(params)  # type: ignore[no-any-return]
+    return await create_snitch_impl(  # type: ignore[no-any-return]
+        name=name,
+        interval=interval,
+        notes=notes,
+        tags=tags,
+        alert_type=alert_type,
+        alert_email=alert_email,
+    )
 
 
 @handle_errors
-async def pause_snitch_impl(params: PauseSnitchParams) -> dict[str, Any]:
+async def pause_snitch_impl(token: str, until: str | None = None) -> dict[str, Any]:
     """Pause a snitch.
 
     Temporarily disables monitoring for a snitch. While paused, the snitch
     will not send alerts if check-ins are missed. This is useful during
     maintenance windows or when temporarily disabling a monitored task.
     """
-    snitch = await get_client().pause_snitch(params.token, params.until)
+    snitch = await get_client().pause_snitch(token, until)
     return {
         "success": True,
         "message": "Snitch paused successfully",
@@ -292,25 +246,30 @@ async def pause_snitch_impl(params: PauseSnitchParams) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def pause_snitch(params: PauseSnitchParams) -> dict[str, Any]:
+async def pause_snitch(token: str, until: str | None = None) -> dict[str, Any]:
     """Pause a snitch.
 
     Temporarily disables monitoring for a snitch. While paused, the snitch
     will not send alerts if check-ins are missed. This is useful during
     maintenance windows or when temporarily disabling a monitored task.
+
+    Args:
+        token: The snitch token
+        until: Optional ISO 8601 timestamp to pause until
+            (e.g., '2025-01-25T12:00:00Z')
     """
-    return await pause_snitch_impl(params)  # type: ignore[no-any-return]
+    return await pause_snitch_impl(token, until)  # type: ignore[no-any-return]
 
 
 @handle_errors
-async def unpause_snitch_impl(params: UnpauseSnitchParams) -> dict[str, Any]:
+async def unpause_snitch_impl(token: str) -> dict[str, Any]:
     """Unpause (resume) a snitch.
 
     Re-enables monitoring for a previously paused snitch. The snitch will
     resume sending alerts if check-ins are missed according to its configured
     interval.
     """
-    snitch = await get_client().unpause_snitch(params.token)
+    snitch = await get_client().unpause_snitch(token)
     return {
         "success": True,
         "message": "Snitch unpaused successfully",
@@ -319,97 +278,38 @@ async def unpause_snitch_impl(params: UnpauseSnitchParams) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def unpause_snitch(params: UnpauseSnitchParams) -> dict[str, Any]:
+async def unpause_snitch(token: str) -> dict[str, Any]:
     """Unpause (resume) a snitch.
 
     Re-enables monitoring for a previously paused snitch. The snitch will
     resume sending alerts if check-ins are missed according to its configured
     interval.
+
+    Args:
+        token: The snitch token
     """
-    return await unpause_snitch_impl(params)  # type: ignore[no-any-return]
-
-
-# Pydantic models for new tool parameters
-class UpdateSnitchParams(BaseModel):
-    """Parameters for updating a snitch."""
-
-    token: str = Field(
-        ...,
-        description="The snitch token",
-    )
-    name: str | None = Field(
-        None,
-        description="New name for the snitch",
-    )
-    interval: str | None = Field(
-        None,
-        description="New check-in interval (e.g., '15_minute', 'hourly', 'daily', "
-        "'weekly', 'monthly')",
-    )
-    notes: str | None = Field(
-        None,
-        description="New notes for the snitch",
-    )
-    tags: list[str] | None = Field(
-        None,
-        description="New tags for the snitch (replaces existing tags)",
-    )
-    alert_type: str | None = Field(
-        None,
-        description="New alert type ('basic' or 'smart')",
-    )
-    alert_email: list[str] | None = Field(
-        None,
-        description="New list of email addresses for alerts",
-    )
-
-
-class DeleteSnitchParams(BaseModel):
-    """Parameters for deleting a snitch."""
-
-    token: str = Field(
-        ...,
-        description="The snitch token",
-    )
-
-
-class AddTagsParams(BaseModel):
-    """Parameters for adding tags to a snitch."""
-
-    token: str = Field(
-        ...,
-        description="The snitch token",
-    )
-    tags: list[str] = Field(
-        ...,
-        description="List of tags to add",
-    )
-
-
-class RemoveTagParams(BaseModel):
-    """Parameters for removing a tag from a snitch."""
-
-    token: str = Field(
-        ...,
-        description="The snitch token",
-    )
-    tag: str = Field(
-        ...,
-        description="The tag to remove",
-    )
+    return await unpause_snitch_impl(token)  # type: ignore[no-any-return]
 
 
 @handle_errors
-async def update_snitch_impl(params: UpdateSnitchParams) -> dict[str, Any]:
+async def update_snitch_impl(
+    token: str,
+    name: str | None = None,
+    interval: str | None = None,
+    notes: str | None = None,
+    tags: list[str] | None = None,
+    alert_type: str | None = None,
+    alert_email: list[str] | None = None,
+) -> dict[str, Any]:
     """Update an existing snitch."""
     snitch = await get_client().update_snitch(
-        token=params.token,
-        name=params.name,
-        interval=params.interval,
-        notes=params.notes,
-        tags=params.tags,
-        alert_type=params.alert_type,
-        alert_email=params.alert_email,
+        token=token,
+        name=name,
+        interval=interval,
+        notes=notes,
+        tags=tags,
+        alert_type=alert_type,
+        alert_email=alert_email,
     )
     return {
         "success": True,
@@ -419,7 +319,15 @@ async def update_snitch_impl(params: UpdateSnitchParams) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def update_snitch(params: UpdateSnitchParams) -> dict[str, Any]:
+async def update_snitch(
+    token: str,
+    name: str | None = None,
+    interval: str | None = None,
+    notes: str | None = None,
+    tags: list[str] | None = None,
+    alert_type: str | None = None,
+    alert_email: list[str] | None = None,
+) -> dict[str, Any]:
     """Update an existing snitch.
 
     Modifies one or more attributes of an existing Dead Man's Snitch monitor.
@@ -428,14 +336,32 @@ async def update_snitch(params: UpdateSnitchParams) -> dict[str, Any]:
 
     Note: Tags provided will replace all existing tags, not append to them.
     Use add_tags/remove_tag for incremental tag management.
+
+    Args:
+        token: The snitch token
+        name: New name for the snitch
+        interval: New check-in interval ('15_minute', 'hourly', 'daily',
+            'weekly', 'monthly')
+        notes: New notes for the snitch
+        tags: New tags for the snitch (replaces existing tags)
+        alert_type: New alert type ('basic' or 'smart')
+        alert_email: New list of email addresses for alerts
     """
-    return await update_snitch_impl(params)  # type: ignore[no-any-return]
+    return await update_snitch_impl(  # type: ignore[no-any-return]
+        token=token,
+        name=name,
+        interval=interval,
+        notes=notes,
+        tags=tags,
+        alert_type=alert_type,
+        alert_email=alert_email,
+    )
 
 
 @handle_errors
-async def delete_snitch_impl(params: DeleteSnitchParams) -> dict[str, Any]:
+async def delete_snitch_impl(token: str) -> dict[str, Any]:
     """Delete a snitch."""
-    result = await get_client().delete_snitch(params.token)
+    result = await get_client().delete_snitch(token)
     return {
         "success": True,
         "message": "Snitch deleted successfully",
@@ -444,55 +370,66 @@ async def delete_snitch_impl(params: DeleteSnitchParams) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def delete_snitch(params: DeleteSnitchParams) -> dict[str, Any]:
+async def delete_snitch(token: str) -> dict[str, Any]:
     """Delete a snitch permanently.
 
     WARNING: This action cannot be undone. The snitch and all its
     check-in history will be permanently deleted.
+
+    Args:
+        token: The snitch token
     """
-    return await delete_snitch_impl(params)  # type: ignore[no-any-return]
+    return await delete_snitch_impl(token)  # type: ignore[no-any-return]
 
 
 @handle_errors
-async def add_tags_impl(params: AddTagsParams) -> dict[str, Any]:
+async def add_tags_impl(token: str, tags: list[str]) -> dict[str, Any]:
     """Add tags to a snitch."""
-    snitch = await get_client().add_tags(params.token, params.tags)
+    snitch = await get_client().add_tags(token, tags)
     return {
         "success": True,
-        "message": f"Added {len(params.tags)} tags successfully",
+        "message": f"Added {len(tags)} tags successfully",
         "snitch": snitch,
     }
 
 
 @mcp.tool()
-async def add_tags(params: AddTagsParams) -> dict[str, Any]:
+async def add_tags(token: str, tags: list[str]) -> dict[str, Any]:
     """Add tags to a snitch.
 
     Appends one or more tags to an existing snitch without affecting
     its current tags. Use this for incremental tag management.
+
+    Args:
+        token: The snitch token
+        tags: List of tags to add
     """
-    return await add_tags_impl(params)  # type: ignore[no-any-return]
+    return await add_tags_impl(token, tags)  # type: ignore[no-any-return]
 
 
 @handle_errors
-async def remove_tag_impl(params: RemoveTagParams) -> dict[str, Any]:
+async def remove_tag_impl(token: str, tag: str) -> dict[str, Any]:
     """Remove a tag from a snitch."""
-    snitch = await get_client().remove_tag(params.token, params.tag)
+    snitch = await get_client().remove_tag(token, tag)
     return {
         "success": True,
-        "message": f"Tag '{params.tag}' removed successfully",
+        "message": f"Tag '{tag}' removed successfully",
         "snitch": snitch,
     }
 
 
 @mcp.tool()
-async def remove_tag(params: RemoveTagParams) -> dict[str, Any]:
+async def remove_tag(token: str, tag: str) -> dict[str, Any]:
     """Remove a specific tag from a snitch.
 
     Removes a single tag from a snitch without affecting other tags.
     If the tag doesn't exist, the operation will fail.
+
+    Args:
+        token: The snitch token
+        tag: The tag to remove
     """
-    return await remove_tag_impl(params)  # type: ignore[no-any-return]
+    return await remove_tag_impl(token, tag)  # type: ignore[no-any-return]
 
 
 def main() -> None:

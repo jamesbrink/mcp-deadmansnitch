@@ -6,12 +6,6 @@ import pytest
 
 from mcp_deadmansnitch.client import DeadMansSnitchError
 from mcp_deadmansnitch.server import (
-    CheckInParams,
-    CreateSnitchParams,
-    GetSnitchParams,
-    ListSnitchesParams,
-    PauseSnitchParams,
-    UnpauseSnitchParams,
     check_in_impl,
     create_snitch_impl,
     get_snitch_impl,
@@ -42,8 +36,7 @@ class TestMCPToolIntegration:
         mock_client.list_snitches = AsyncMock(return_value=mock_snitches)
 
         # Execute
-        params = ListSnitchesParams(tags=["prod"])
-        result = await list_snitches_impl(params)
+        result = await list_snitches_impl(tags=["prod"])
 
         # Verify MCP response format
         assert result["success"] is True
@@ -59,8 +52,7 @@ class TestMCPToolIntegration:
         )
 
         # Execute
-        params = ListSnitchesParams()
-        result = await list_snitches_impl(params)
+        result = await list_snitches_impl()
 
         # Verify error response format
         assert result["success"] is False
@@ -80,8 +72,7 @@ class TestMCPToolIntegration:
         mock_client.get_snitch = AsyncMock(return_value=mock_snitch)
 
         # Execute
-        params = GetSnitchParams(token="abc123")
-        result = await get_snitch_impl(params)
+        result = await get_snitch_impl(token="abc123")
 
         # Verify
         assert result["success"] is True
@@ -95,8 +86,7 @@ class TestMCPToolIntegration:
         mock_client.check_in = AsyncMock(return_value=mock_response)
 
         # Execute
-        params = CheckInParams(token="abc123", message="Backup completed")
-        result = await check_in_impl(params)
+        result = await check_in_impl(token="abc123", message="Backup completed")
 
         # Verify
         assert result["success"] is True
@@ -111,8 +101,7 @@ class TestMCPToolIntegration:
         mock_client.check_in = AsyncMock(return_value=mock_response)
 
         # Execute
-        params = CheckInParams(token="abc123")
-        result = await check_in_impl(params)
+        result = await check_in_impl(token="abc123")
 
         # Verify
         assert result["success"] is True
@@ -129,14 +118,13 @@ class TestMCPToolIntegration:
         mock_client.create_snitch = AsyncMock(return_value=mock_snitch)
 
         # Execute
-        params = CreateSnitchParams(
+        result = await create_snitch_impl(
             name="New Monitor",
             interval="15_minute",
             notes="Critical service monitor",
             tags=["critical", "production"],
             alert_type="smart",
         )
-        result = await create_snitch_impl(params)
 
         # Verify
         assert result["success"] is True
@@ -158,8 +146,7 @@ class TestMCPToolIntegration:
         mock_client.create_snitch = AsyncMock(return_value=mock_snitch)
 
         # Execute
-        params = CreateSnitchParams(name="Basic Monitor", interval="daily")
-        await create_snitch_impl(params)
+        await create_snitch_impl(name="Basic Monitor", interval="daily")
 
         # Verify defaults are used
         mock_client.create_snitch.assert_called_once_with(
@@ -178,8 +165,7 @@ class TestMCPToolIntegration:
         mock_client.pause_snitch = AsyncMock(return_value=mock_snitch)
 
         # Execute
-        params = PauseSnitchParams(token="abc123")
-        result = await pause_snitch_impl(params)
+        result = await pause_snitch_impl(token="abc123")
 
         # Verify
         assert result["success"] is True
@@ -193,8 +179,7 @@ class TestMCPToolIntegration:
         mock_client.unpause_snitch = AsyncMock(return_value=mock_snitch)
 
         # Execute
-        params = UnpauseSnitchParams(token="abc123")
-        result = await unpause_snitch_impl(params)
+        result = await unpause_snitch_impl(token="abc123")
 
         # Verify
         assert result["success"] is True
@@ -206,27 +191,27 @@ class TestMCPToolIntegration:
         error_msg = "API rate limit exceeded"
 
         # Test each tool's error handling
-        tools_and_params = [
-            (list_snitches_impl, ListSnitchesParams(), "list_snitches"),
-            (get_snitch_impl, GetSnitchParams(token="abc"), "get_snitch"),
-            (check_in_impl, CheckInParams(token="abc"), "check_in"),
+        tools_and_args = [
+            (list_snitches_impl, {}, "list_snitches"),
+            (get_snitch_impl, {"token": "abc"}, "get_snitch"),
+            (check_in_impl, {"token": "abc"}, "check_in"),
             (
                 create_snitch_impl,
-                CreateSnitchParams(name="Test", interval="daily"),
+                {"name": "Test", "interval": "daily"},
                 "create_snitch",
             ),
-            (pause_snitch_impl, PauseSnitchParams(token="abc"), "pause_snitch"),
-            (unpause_snitch_impl, UnpauseSnitchParams(token="abc"), "unpause_snitch"),
+            (pause_snitch_impl, {"token": "abc"}, "pause_snitch"),
+            (unpause_snitch_impl, {"token": "abc"}, "unpause_snitch"),
         ]
 
-        for tool_func, params, method_name in tools_and_params:
+        for tool_func, kwargs, method_name in tools_and_args:
             # Setup mock to raise error
             getattr(mock_client, method_name).side_effect = DeadMansSnitchError(
                 error_msg
             )
 
             # Execute
-            result = await tool_func(params)
+            result = await tool_func(**kwargs)
 
             # Verify consistent error format
             assert result["success"] is False

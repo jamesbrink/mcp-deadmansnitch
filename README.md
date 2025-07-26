@@ -19,14 +19,9 @@ This MCP server provides tools to:
 
 ## Installation & Setup
 
-1. Install the package:
-```bash
-pip install mcp-deadmansnitch
-```
+1. Get your API key from [Dead Man's Snitch account settings](https://deadmanssnitch.com/account/integrations)
 
-2. Get your API key from [Dead Man's Snitch account settings](https://deadmanssnitch.com/account/integrations)
-
-3. Configure Claude Desktop by adding this to your settings:
+2. Configure your MCP client by adding this to your settings:
 
 ```json
 {
@@ -55,6 +50,10 @@ Send a check-in to confirm a task completed successfully.
 
 ### `create_snitch`
 Create a new snitch monitor with intervals: 15_minute, hourly, daily, weekly, or monthly.
+
+**Note on array parameters**: When using MCP tools through Claude, pass arrays directly without JSON encoding:
+- ✅ Correct: `tags: ["test", "production"]`
+- ❌ Incorrect: `tags: "[\"test\", \"production\"]"`
 
 ### `update_snitch`
 Update snitch configuration including name, interval, notes, tags, and alert settings.

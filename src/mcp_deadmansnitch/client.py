@@ -229,8 +229,8 @@ class DeadMansSnitchClient:
 
         Args:
             token: The snitch token.
-            until: Optional timestamp or duration to pause until
-                  (e.g., "2025-01-25T12:00:00Z" or "24h").
+            until: Optional ISO 8601 timestamp to pause until
+                  (e.g., "2025-01-25T12:00:00Z").
 
         Returns:
             Updated snitch details dictionary.

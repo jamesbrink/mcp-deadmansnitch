@@ -32,3 +32,6 @@ dmypy.json
 # OS
 .DS_Store
 Thumbs.db
+
+# MCP configuration (contains API keys)
+.mcp.json

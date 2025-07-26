@@ -7,15 +7,6 @@ import pytest
 
 from mcp_deadmansnitch.client import DeadMansSnitchClient
 from mcp_deadmansnitch.server import (
-    AddTagsParams,
-    CheckInParams,
-    CreateSnitchParams,
-    DeleteSnitchParams,
-    GetSnitchParams,
-    ListSnitchesParams,
-    PauseSnitchParams,
-    RemoveTagParams,
-    UpdateSnitchParams,
     add_tags_impl,
     check_in_impl,
     create_snitch_impl,
@@ -78,7 +69,7 @@ class TestAuthenticationErrors:
     @pytest.mark.asyncio
     async def test_list_snitches_missing_api_key(self):
         """Test list_snitches handles missing API key gracefully."""
-        result = await list_snitches_impl(ListSnitchesParams())
+        result = await list_snitches_impl()
 
         assert result["success"] is False
         assert "Dead Man's Snitch API key not configured" in result["error"]
@@ -87,7 +78,7 @@ class TestAuthenticationErrors:
     @pytest.mark.asyncio
     async def test_get_snitch_missing_api_key(self):
         """Test get_snitch handles missing API key gracefully."""
-        result = await get_snitch_impl(GetSnitchParams(token="test-token"))
+        result = await get_snitch_impl(token="test-token")
 
         assert result["success"] is False
         assert "Dead Man's Snitch API key not configured" in result["error"]
@@ -95,7 +86,7 @@ class TestAuthenticationErrors:
     @pytest.mark.asyncio
     async def test_check_in_missing_api_key(self):
         """Test check_in handles missing API key gracefully."""
-        result = await check_in_impl(CheckInParams(token="test-token"))
+        result = await check_in_impl(token="test-token")
 
         assert result["success"] is False
         assert "Dead Man's Snitch API key not configured" in result["error"]
@@ -103,8 +94,7 @@ class TestAuthenticationErrors:
     @pytest.mark.asyncio
     async def test_create_snitch_missing_api_key(self):
         """Test create_snitch handles missing API key gracefully."""
-        params = CreateSnitchParams(name="Test Snitch", interval="hourly")
-        result = await create_snitch_impl(params)
+        result = await create_snitch_impl(name="Test Snitch", interval="hourly")
 
         assert result["success"] is False
         assert "Dead Man's Snitch API key not configured" in result["error"]
@@ -112,7 +102,7 @@ class TestAuthenticationErrors:
     @pytest.mark.asyncio
     async def test_pause_snitch_missing_api_key(self):
         """Test pause_snitch handles missing API key gracefully."""
-        result = await pause_snitch_impl(PauseSnitchParams(token="test-token"))
+        result = await pause_snitch_impl(token="test-token")
 
         assert result["success"] is False
         assert "Dead Man's Snitch API key not configured" in result["error"]
@@ -120,8 +110,7 @@ class TestAuthenticationErrors:
     @pytest.mark.asyncio
     async def test_update_snitch_missing_api_key(self):
         """Test update_snitch handles missing API key gracefully."""
-        params = UpdateSnitchParams(token="test-token", name="Updated Name")
-        result = await update_snitch_impl(params)
+        result = await update_snitch_impl(token="test-token", name="Updated Name")
 
         assert result["success"] is False
         assert "Dead Man's Snitch API key not configured" in result["error"]
@@ -129,7 +118,7 @@ class TestAuthenticationErrors:
     @pytest.mark.asyncio
     async def test_delete_snitch_missing_api_key(self):
         """Test delete_snitch handles missing API key gracefully."""
-        result = await delete_snitch_impl(DeleteSnitchParams(token="test-token"))
+        result = await delete_snitch_impl(token="test-token")
 
         assert result["success"] is False
         assert "Dead Man's Snitch API key not configured" in result["error"]
@@ -137,8 +126,7 @@ class TestAuthenticationErrors:
     @pytest.mark.asyncio
     async def test_add_tags_missing_api_key(self):
         """Test add_tags handles missing API key gracefully."""
-        params = AddTagsParams(token="test-token", tags=["tag1", "tag2"])
-        result = await add_tags_impl(params)
+        result = await add_tags_impl(token="test-token", tags=["tag1", "tag2"])
 
         assert result["success"] is False
         assert "Dead Man's Snitch API key not configured" in result["error"]
@@ -146,8 +134,7 @@ class TestAuthenticationErrors:
     @pytest.mark.asyncio
     async def test_remove_tag_missing_api_key(self):
         """Test remove_tag handles missing API key gracefully."""
-        params = RemoveTagParams(token="test-token", tag="tag1")
-        result = await remove_tag_impl(params)
+        result = await remove_tag_impl(token="test-token", tag="tag1")
 
         assert result["success"] is False
         assert "Dead Man's Snitch API key not configured" in result["error"]
@@ -198,7 +185,7 @@ class TestAPIAuthenticationErrors:
             # Configure the mock to raise the error
             mock_client_instance.get.side_effect = error
 
-            result = await list_snitches_impl(ListSnitchesParams())
+            result = await list_snitches_impl()
 
             assert result["success"] is False
             assert "Authentication failed" in result["error"]
@@ -233,7 +220,7 @@ class TestAPIAuthenticationErrors:
             # Configure the mock to raise the error
             mock_client_instance.get.side_effect = error
 
-            result = await get_snitch_impl(GetSnitchParams(token="test-token"))
+            result = await get_snitch_impl(token="test-token")
 
             assert result["success"] is False
             assert "403" in result["error"] or "Forbidden" in result["error"]
@@ -264,7 +251,7 @@ class TestUnexpectedErrors:
             # Make it raise an unexpected error
             mock_list.side_effect = RuntimeError("Unexpected error occurred")
 
-            result = await list_snitches_impl(ListSnitchesParams())
+            result = await list_snitches_impl()
 
             assert result["success"] is False
             assert "Unexpected error" in result["error"]
