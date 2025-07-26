@@ -22,6 +22,15 @@ uv run ruff format
 uv run mcp-deadmansnitch
 ```
 
+## Release Process
+
+We use a beta release workflow to test on TestPyPI before production:
+
+1. **Beta releases** (e.g., `v0.1.2-beta1`) publish to TestPyPI only for testing
+2. **Production releases** (e.g., `v0.1.2`) require TestPyPI to succeed first, then publish to PyPI
+
+See `RELEASING.md` for detailed release instructions.
+
 ## Architecture Overview
 
 The codebase follows a standard MCP server structure:

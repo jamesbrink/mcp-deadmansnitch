@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Beta release workflow for testing on TestPyPI before production
+- TestPyPI as required gate before PyPI publishing  
+- RELEASING.md documentation for release process
+- Automated smoke tests after TestPyPI publishing
+
+### Changed
+- Production releases now require TestPyPI success before PyPI
+- Removed skip-existing from TestPyPI to catch version conflicts early
+
 ## [0.1.1] - 2025-01-26
 
 ### Fixed
