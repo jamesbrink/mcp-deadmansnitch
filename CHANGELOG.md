@@ -7,15 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-01-16
+
+### Breaking Changes
+- **Consolidated 10 MCP tools into single unified `snitch` tool** with `action` parameter
+  - Old: `list_snitches()`, `get_snitch()`, `create_snitch()`, etc.
+  - New: `snitch(action="list")`, `snitch(action="get", token="...")`, etc.
+  - This reduces context usage when connecting to LLMs
+
 ### Added
+- Docker image support via Nix flake (`nix build .#docker`)
+- Nix CI/CD job for flake validation and Docker builds
+- FlakeHub publishing workflow for tagged releases
+- FlakeHub and Nix flake badges in README
+- Docker usage documentation in README and NIX.md
+- OCI metadata labels on Docker image (version, revision, author, etc.)
+- Clean server exit handling (no traceback on Ctrl+C)
 - Beta release workflow for testing on TestPyPI before production
-- TestPyPI as required gate before PyPI publishing  
 - RELEASING.md documentation for release process
-- Automated smoke tests after TestPyPI publishing
 
 ### Changed
 - Production releases now require TestPyPI success before PyPI
-- Removed skip-existing from TestPyPI to catch version conflicts early
+- Docker image timestamp uses git commit date instead of Unix epoch
+
+### Fixed
+- Server now exits cleanly on KeyboardInterrupt (Ctrl+C)
+- Nix flake builds include lupa dependency
 
 ## [0.1.1] - 2025-01-26
 
