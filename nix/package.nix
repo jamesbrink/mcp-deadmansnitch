@@ -5,7 +5,7 @@
 }:
 python3Packages.buildPythonApplication rec {
   pname = "mcp-deadmansnitch";
-  version = "0.1.1";
+  version = "1.0.0";
   pyproject = true;
 
   # Source is passed in from flake.nix using `self`
