@@ -23,6 +23,43 @@ nix build github:jamesbrink/mcp-deadmansnitch
 # The binary will be at ./result/bin/mcp-deadmansnitch
 ```
 
+## Docker
+
+The flake includes a Docker image target, providing another deployment option.
+
+### Build Docker Image
+
+```bash
+# Build the Docker image via Nix
+nix build .#docker
+
+# Load into Docker
+docker load < result
+
+# Run (requires API key)
+docker run --rm -e DEADMANSNITCH_API_KEY="your_api_key" mcp-deadmansnitch:latest
+```
+
+### MCP Client Configuration (Docker)
+
+Configure your MCP client to use Docker:
+
+```json
+{
+  "mcpServers": {
+    "deadmansnitch": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "-e", "DEADMANSNITCH_API_KEY", "mcp-deadmansnitch:latest"],
+      "env": {
+        "DEADMANSNITCH_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+Note: The `-i` flag keeps stdin open, which is required for MCP's stdio transport.
+
 ## NixOS Configuration
 
 ### Using the Overlay
@@ -204,6 +241,7 @@ The development shell provides:
 |--------|-------------|
 | `packages.<system>.default` | The mcp-deadmansnitch package |
 | `packages.<system>.mcp-deadmansnitch` | Alias for the default package |
+| `packages.<system>.docker` | Docker image (load with `docker load < result`) |
 | `apps.<system>.default` | Run with `nix run` |
 | `overlays.default` | Nixpkgs overlay adding `pkgs.mcp-deadmansnitch` |
 | `devShells.<system>.default` | Development environment |

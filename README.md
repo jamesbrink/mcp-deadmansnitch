@@ -5,6 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/jamesbrink/mcp-deadmansnitch/actions/workflows/ci.yml/badge.svg)](https://github.com/jamesbrink/mcp-deadmansnitch/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jamesbrink/mcp-deadmansnitch/graph/badge.svg)](https://codecov.io/gh/jamesbrink/mcp-deadmansnitch)
+[![FlakeHub](https://img.shields.io/endpoint?url=https://flakehub.com/f/jamesbrink/mcp-deadmansnitch/badge)](https://flakehub.com/flake/jamesbrink/mcp-deadmansnitch)
+[![Nix Flake](https://img.shields.io/badge/Nix-flake-blue?logo=nixos)](https://nixos.org)
 
 A Model Context Protocol (MCP) server for [Dead Man's Snitch](https://deadmanssnitch.com/) monitoring service. This server enables AI assistants like Claude to interact with Dead Man's Snitch to monitor scheduled tasks and cron jobs.
 
@@ -52,6 +54,35 @@ nix build github:jamesbrink/mcp-deadmansnitch
 
 See [NIX.md](NIX.md) for detailed NixOS configuration and declarative usage.
 
+### Docker
+
+A Docker image can be built from the Nix flake:
+
+```bash
+# Build and load the image
+nix build github:jamesbrink/mcp-deadmansnitch#docker
+docker load < result
+
+# Run the server
+docker run --rm -e DEADMANSNITCH_API_KEY="your_api_key" mcp-deadmansnitch:latest
+```
+
+Configure your MCP client to use Docker:
+
+```json
+{
+  "mcpServers": {
+    "deadmansnitch": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "-e", "DEADMANSNITCH_API_KEY", "mcp-deadmansnitch:latest"],
+      "env": {
+        "DEADMANSNITCH_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
 ## Available Tools
 
 This MCP server exposes a single unified `snitch` tool with an `action` parameter to reduce context usage when connecting to LLMs.
@@ -76,11 +107,6 @@ Manage Dead Man's Snitch monitors with the following actions:
 **Valid intervals**: `15_minute`, `hourly`, `daily`, `weekly`, `monthly`
 
 **Valid alert_types**: `basic`, `smart`
-
-**Note on array parameters**: When using MCP tools through Claude, pass arrays directly without JSON encoding:
-
-- ✅ Correct: `tags: ["test", "production"]`
-- ❌ Incorrect: `tags: "[\"test\", \"production\"]"`
 
 ## Example Usage in Claude
 

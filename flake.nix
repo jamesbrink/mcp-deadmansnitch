@@ -34,6 +34,44 @@
         packages = {
           default = mcp-deadmansnitch;
           mcp-deadmansnitch = mcp-deadmansnitch;
+
+          # Docker image (Linux only)
+          docker = let
+            # Format git commit date as ISO 8601 (YYYYMMDDHHMMSS -> YYYY-MM-DDTHH:MM:SSZ)
+            d = self.lastModifiedDate;
+            createdDate = "${builtins.substring 0 4 d}-${builtins.substring 4 2 d}-${builtins.substring 6 2 d}T${builtins.substring 8 2 d}:${builtins.substring 10 2 d}:${builtins.substring 12 2 d}Z";
+            version = mcp-deadmansnitch.version;
+            rev = self.rev or self.dirtyRev or "unknown";
+          in
+            pkgs.dockerTools.buildLayeredImage {
+              name = "mcp-deadmansnitch";
+              tag = "latest";
+              created = createdDate;
+
+              contents = [
+                mcp-deadmansnitch
+                pkgs.cacert # For HTTPS
+              ];
+
+              config = {
+                Entrypoint = ["${mcp-deadmansnitch}/bin/mcp-deadmansnitch"];
+                Env = [
+                  "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+                ];
+                Labels = {
+                  "org.opencontainers.image.title" = "mcp-deadmansnitch";
+                  "org.opencontainers.image.description" = "MCP server for Dead Man's Snitch monitoring service";
+                  "org.opencontainers.image.version" = version;
+                  "org.opencontainers.image.revision" = rev;
+                  "org.opencontainers.image.created" = createdDate;
+                  "org.opencontainers.image.source" = "https://github.com/jamesbrink/mcp-deadmansnitch";
+                  "org.opencontainers.image.url" = "https://github.com/jamesbrink/mcp-deadmansnitch";
+                  "org.opencontainers.image.documentation" = "https://github.com/jamesbrink/mcp-deadmansnitch#readme";
+                  "org.opencontainers.image.licenses" = "MIT";
+                  "org.opencontainers.image.authors" = "James Brink <james@jamesbrink.net>";
+                };
+              };
+            };
         };
 
         # Apps for `nix run`
