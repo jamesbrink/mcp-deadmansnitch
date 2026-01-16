@@ -35,16 +35,16 @@ See `RELEASING.md` for detailed release instructions.
 
 The codebase follows a standard MCP server structure:
 
-- **`src/mcp_deadmansnitch/server.py`**: Main MCP server implementation using the `mcp` framework. Handles tool registration and request routing.
-- **`src/mcp_deadmansnitch/client.py`**: HTTP client for Dead Man's Snitch API. Implements all API interactions with proper authentication and error handling.
-- **`main.py`**: Entry point that starts the server with stdio transport.
+- **`src/mcp_deadmansnitch/server.py`**: Main MCP server implementation using FastMCP. Handles tool registration and request routing. Entry point is `main()`.
+- **`src/mcp_deadmansnitch/client.py`**: HTTP client for Dead Man's Snitch API using httpx. Implements all API interactions with proper authentication and error handling.
 
 ### Key Design Patterns
 
 1. **API Authentication**: Uses HTTP Basic Auth with API key as username (no password)
 2. **Response Format**: All tools return consistent `{"success": bool, "data": ..., "error": ...}` format
-3. **Error Handling**: API errors are caught and wrapped with context
+3. **Error Handling**: API errors are caught and wrapped with context via `@handle_errors` decorator
 4. **Check-in URLs**: Check-ins use separate URLs (https://nosnch.in/{token}) not the main API
+5. **Testability**: Each tool has a separate `_impl` function (e.g., `list_snitches_impl`) that can be tested without MCP decorator overhead
 
 ### Available Tools
 
@@ -53,9 +53,9 @@ The codebase follows a standard MCP server structure:
 - `create_snitch`: Create new snitch (required: name, interval)
 - `update_snitch`: Update snitch configuration
 - `delete_snitch`: Delete a snitch
-- `pause_snitch`: Temporarily pause monitoring
+- `pause_snitch`/`unpause_snitch`: Temporarily pause/resume monitoring
 - `check_in`: Send check-in signal to snitch URL
-- `add_tags`/`remove_tags`: Manage snitch tags
+- `add_tags`/`remove_tag`: Manage snitch tags
 
 ### Valid Intervals
 

@@ -9,7 +9,7 @@ from fastmcp import FastMCP
 from .client import DeadMansSnitchClient, DeadMansSnitchError
 
 # Initialize FastMCP server
-mcp = FastMCP("mcp-deadmansnitch")  # type: ignore[var-annotated]
+mcp = FastMCP("mcp-deadmansnitch")
 
 # Type variable for decorator
 T = TypeVar("T")
