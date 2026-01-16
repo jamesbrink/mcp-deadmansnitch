@@ -19,6 +19,9 @@ python3Packages.buildPythonApplication rec {
     fastmcp
     httpx
     python-dotenv
+    # Transitive deps needed at runtime but not auto-propagated:
+    # fastmcp -> pydocket -> fakeredis -> lupa (optional "lua" extra)
+    lupa
   ];
 
   # No tests in the package build (run separately in CI)
