@@ -423,7 +423,13 @@ async def snitch(
 
 def main() -> None:
     """Run the MCP server."""
-    mcp.run()
+    import sys
+
+    try:
+        mcp.run()
+    except KeyboardInterrupt:
+        # Exit cleanly on Ctrl+C
+        sys.exit(0)
 
 
 if __name__ == "__main__":
