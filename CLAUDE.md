@@ -9,7 +9,7 @@ This MCP server provides tools to interact with Dead Man's Snitch, a monitoring 
 ## Essential Commands
 
 ```bash
-# Run tests
+# Run tests (uses pytest-asyncio in auto mode)
 uv run pytest -v
 uv run pytest tests/test_client.py::TestClass::test_method  # Run single test
 
@@ -18,9 +18,24 @@ uv run mypy src/
 uv run ruff check
 uv run ruff format
 
-# Run server
-uv run mcp-deadmansnitch
+# Run server (requires DEADMANSNITCH_API_KEY env var)
+DEADMANSNITCH_API_KEY=your_key uv run mcp-deadmansnitch
 ```
+
+## Nix Development
+
+```bash
+# Enter dev shell (provides Python 3.12, uv, ruff, gcc)
+nix develop
+
+# Run directly
+nix run .
+
+# Build package
+nix build .
+```
+
+See `NIX.md` for NixOS/Home Manager integration and secrets management.
 
 ## Release Process
 
@@ -44,7 +59,7 @@ The codebase follows a standard MCP server structure:
 2. **Response Format**: All tools return consistent `{"success": bool, "data": ..., "error": ...}` format
 3. **Error Handling**: API errors are caught and wrapped with context via `@handle_errors` decorator
 4. **Check-in URLs**: Check-ins use separate URLs (https://nosnch.in/{token}) not the main API
-5. **Testability**: Each tool has a separate `_impl` function (e.g., `list_snitches_impl`) that can be tested without MCP decorator overhead
+5. **Testability**: Each tool has a separate `_impl` function (e.g., `list_snitches_impl`) that can be unit tested directly without FastMCP decorator overhead
 
 ### Available Tools
 
@@ -63,8 +78,9 @@ The codebase follows a standard MCP server structure:
 
 ## Testing Strategy
 
-- **Unit tests** (`test_client.py`): Test individual client methods with mocked API responses
-- **Integration tests** (`test_integration.py`): Test server tool handlers
+- **Client tests** (`test_client.py`): Test individual client methods with mocked httpx responses
+- **Server tests** (`test_server.py`, `test_integration.py`): Test tool handlers via `_impl` functions
+- **Error coverage** (`test_auth_errors.py`, `test_error_coverage.py`, `test_edge_cases.py`): Edge cases and error paths
 - **All API calls should be mocked** to avoid rate limits and dependency on external service
 
 ## API Endpoints
