@@ -445,6 +445,29 @@ class TestValidateParams:
         result = _validate_params("add_tags", {"token": "abc", "tags": ["t1"]})
         assert result is None
 
+    def test_update_requires_at_least_one_field(self):
+        """Test update action requires at least one field to change."""
+        # Only token provided - should fail
+        result = _validate_params("update", {"token": "abc123"})
+        assert result is not None
+        assert "at least one field" in result
+        assert "update" in result
+
+    def test_update_with_one_field_passes(self):
+        """Test update action passes with token and any one mutable field."""
+        # Each optional field should pass validation
+        optional_fields = [
+            {"token": "abc", "name": "New Name"},
+            {"token": "abc", "interval": "daily"},
+            {"token": "abc", "notes": "New notes"},
+            {"token": "abc", "tags": ["tag1"]},
+            {"token": "abc", "alert_type": "smart"},
+            {"token": "abc", "alert_email": ["test@example.com"]},
+        ]
+        for params in optional_fields:
+            result = _validate_params("update", params)
+            assert result is None, f"Failed for params: {params}"
+
 
 class TestUnifiedSnitchTool:
     """Tests for the unified snitch_impl dispatcher."""

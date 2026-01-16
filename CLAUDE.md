@@ -58,7 +58,7 @@ The codebase follows a standard MCP server structure:
 1. **API Authentication**: Uses HTTP Basic Auth with API key as username (no password)
 2. **Response Format**: All tools return consistent `{"success": bool, "data": ..., "error": ...}` format
 3. **Error Handling**: API errors are caught and wrapped with context via `@handle_errors` decorator
-4. **Check-in URLs**: Check-ins use separate URLs (https://nosnch.in/{token}) not the main API
+4. **Check-in URLs**: Check-ins use separate URLs (<https://nosnch.in/{token}>) not the main API
 5. **Testability**: Each action has a separate `_impl` function (e.g., `list_snitches_impl`) that can be unit tested directly without FastMCP decorator overhead
 6. **Unified Tool Design**: Single `snitch` tool with `action` parameter reduces context usage (10 actions → 1 tool definition)
 

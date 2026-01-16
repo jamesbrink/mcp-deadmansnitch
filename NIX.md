@@ -106,12 +106,9 @@ For user-level installation with Home Manager:
     mcp-deadmansnitch.packages.${pkgs.system}.default
   ];
 
-  # Optionally set the API key via environment
-  home.sessionVariables = {
-    DEADMANSNITCH_API_KEY = "your_api_key_here";
-    # Or better, reference a file:
-    # DEADMANSNITCH_API_KEY = "$(cat /run/secrets/deadmansnitch-api-key)";
-  };
+  # For API key management, see "Secrets Management" section below.
+  # Note: home.sessionVariables are set at activation time, not runtime,
+  # so command substitution like $(cat ...) won't work here.
 }
 ```
 

@@ -90,10 +90,20 @@ def _validate_params(action: str, params: dict[str, Any]) -> str | None:
     if action not in ACTION_REQUIREMENTS:
         valid_actions = ", ".join(sorted(ACTION_REQUIREMENTS.keys()))
         return f"Unknown action: {action}. Valid actions: {valid_actions}"
-    required, _ = ACTION_REQUIREMENTS[action]
+    required, optional = ACTION_REQUIREMENTS[action]
     missing = required - {k for k, v in params.items() if v is not None}
     if missing:
         return f"Action '{action}' requires: {', '.join(sorted(missing))}"
+
+    # Special case: update requires at least one field to change
+    if action == "update":
+        provided_optional = {
+            k for k, v in params.items() if v is not None and k in optional
+        }
+        if not provided_optional:
+            fields = ", ".join(sorted(optional))
+            return f"Action 'update' requires at least one field to change: {fields}"
+
     return None
 
 
