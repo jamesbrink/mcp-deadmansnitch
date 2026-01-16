@@ -11,6 +11,7 @@ A Model Context Protocol (MCP) server for [Dead Man's Snitch](https://deadmanssn
 ## What it does
 
 This MCP server provides tools to:
+
 - List and search your monitoring snitches
 - Check in (ping) snitches to confirm tasks are running
 - Create new monitors for your scheduled jobs
@@ -37,42 +38,54 @@ This MCP server provides tools to:
 }
 ```
 
+### Nix / NixOS
+
+For Nix users, this project provides a flake with packages, overlays, and a development shell:
+
+```bash
+# Run directly
+nix run github:jamesbrink/mcp-deadmansnitch
+
+# Build the package
+nix build github:jamesbrink/mcp-deadmansnitch
+```
+
+See [NIX.md](NIX.md) for detailed NixOS configuration and declarative usage.
+
 ## Available Tools
 
-### `list_snitches`
-List all snitches, optionally filtered by tags.
+This MCP server exposes a single unified `snitch` tool with an `action` parameter to reduce context usage when connecting to LLMs.
 
-### `get_snitch`
-Get details about a specific snitch using its token.
+### `snitch`
 
-### `check_in`
-Send a check-in to confirm a task completed successfully.
+Manage Dead Man's Snitch monitors with the following actions:
 
-### `create_snitch`
-Create a new snitch monitor with intervals: 15_minute, hourly, daily, weekly, or monthly.
+| Action | Description | Required Params | Optional Params |
+|--------|-------------|-----------------|-----------------|
+| `list` | List all snitches | - | `tags` (filter) |
+| `get` | Get snitch details | `token` | - |
+| `create` | Create new snitch | `name`, `interval` | `notes`, `tags`, `alert_type`, `alert_email` |
+| `update` | Update snitch | `token` | `name`, `interval`, `notes`, `tags`, `alert_type`, `alert_email` |
+| `delete` | Delete snitch | `token` | - |
+| `pause` | Pause monitoring | `token` | `until` (ISO 8601) |
+| `unpause` | Resume monitoring | `token` | - |
+| `check_in` | Send check-in | `token` | `message` |
+| `add_tags` | Add tags | `token`, `tags` | - |
+| `remove_tag` | Remove a tag | `token`, `tag` | - |
+
+**Valid intervals**: `15_minute`, `hourly`, `daily`, `weekly`, `monthly`
+
+**Valid alert_types**: `basic`, `smart`
 
 **Note on array parameters**: When using MCP tools through Claude, pass arrays directly without JSON encoding:
+
 - ✅ Correct: `tags: ["test", "production"]`
 - ❌ Incorrect: `tags: "[\"test\", \"production\"]"`
-
-### `update_snitch`
-Update snitch configuration including name, interval, notes, tags, and alert settings.
-
-### `delete_snitch`
-Permanently delete a snitch.
-
-### `pause_snitch`
-Temporarily pause monitoring (optionally until a specific time).
-
-### `unpause_snitch`
-Resume monitoring for a paused snitch.
-
-### `add_tags` / `remove_tag`
-Manage tags for organizing snitches.
 
 ## Example Usage in Claude
 
 Once configured, you can ask Claude:
+
 - "List all my Dead Man's Snitch monitors"
 - "Create a daily monitor called 'Database Backup'"
 - "Check in the backup-job snitch"

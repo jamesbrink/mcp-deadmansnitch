@@ -33,5 +33,9 @@ dmypy.json
 .DS_Store
 Thumbs.db
 
+# Nix/direnv
+.direnv/
+result
+
 # MCP configuration (contains API keys)
 .mcp.json

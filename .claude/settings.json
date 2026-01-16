@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Task",
+      "TaskOutput",
+      "Glob",
+      "Grep",
+      "LS",
+      "Read",
+      "Edit",
+      "MultiEdit",
+      "Write",
+      "NotebookEdit",
+      "WebFetch",
+      "WebSearch",
+      "TodoWrite",
+      "AskUserQuestion",
+      "EnterPlanMode",
+      "ExitPlanMode",
+      "KillShell",
+      "LSP",
+      "Skill",
+      "ListMcpResourcesTool",
+      "ReadMcpResourceTool",
+      "mcp__nixos__nix",
+      "mcp__nixos__nix_versions"
+    ]
+  }
+}
