@@ -326,7 +326,7 @@ async def snitch_impl(
             interval=interval,
             notes=notes,
             tags=tags,
-            alert_type=alert_type or "basic",
+            alert_type=alert_type if alert_type is not None else "basic",
             alert_email=alert_email,
         )
     elif action == "update":
@@ -393,7 +393,7 @@ async def snitch(
       list       - List snitches. Optional: tags (filter)
       get        - Get snitch. Required: token
       create     - Create snitch. Required: name, interval
-      update     - Update snitch. Required: token
+      update     - Update snitch. Required: token + at least one field
       delete     - Delete snitch. Required: token
       pause      - Pause monitoring. Required: token. Optional: until
       unpause    - Resume monitoring. Required: token
