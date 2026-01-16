@@ -9,7 +9,9 @@ from dotenv import load_dotenv
 
 # Load .env: try CWD first, then project root (for local development)
 load_dotenv()  # CWD
-load_dotenv(Path(__file__).parent.parent.parent / ".env")  # Project root if developing locally
+load_dotenv(
+    Path(__file__).parent.parent.parent / ".env"
+)  # Project root if developing locally
 
 
 class DeadMansSnitchError(Exception):

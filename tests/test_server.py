@@ -6,9 +6,11 @@ import pytest
 
 from mcp_deadmansnitch.client import DeadMansSnitchError
 from mcp_deadmansnitch.server import (
+    _validate_params,
     add_tags_impl,
     delete_snitch_impl,
     remove_tag_impl,
+    snitch_impl,
     update_snitch_impl,
 )
 from mcp_deadmansnitch.server import (
@@ -381,3 +383,230 @@ class TestNewMCPTools:
             assert result["success"] is False
             assert result["error"] == error_msg
             assert len(result) == 2  # Only success and error fields
+
+
+class TestValidateParams:
+    """Tests for _validate_params function."""
+
+    def test_valid_list_action(self):
+        """Test valid list action with no required params."""
+        result = _validate_params("list", {})
+        assert result is None
+
+    def test_valid_list_action_with_tags(self):
+        """Test valid list action with optional tags."""
+        result = _validate_params("list", {"tags": ["prod"]})
+        assert result is None
+
+    def test_valid_get_action(self):
+        """Test valid get action with required token."""
+        result = _validate_params("get", {"token": "abc123"})
+        assert result is None
+
+    def test_missing_required_param(self):
+        """Test that missing required params are caught."""
+        result = _validate_params("get", {})
+        assert result is not None
+        assert "requires" in result
+        assert "token" in result
+
+    def test_missing_required_param_with_none(self):
+        """Test that None values for required params are caught."""
+        result = _validate_params("get", {"token": None})
+        assert result is not None
+        assert "requires" in result
+
+    def test_unknown_action(self):
+        """Test that unknown actions are rejected."""
+        result = _validate_params("unknown_action", {})
+        assert result is not None
+        assert "Unknown action" in result
+        assert "unknown_action" in result
+
+    def test_create_requires_name_and_interval(self):
+        """Test create action requires both name and interval."""
+        result = _validate_params("create", {"name": "Test"})
+        assert result is not None
+        assert "interval" in result
+
+        result = _validate_params("create", {"interval": "daily"})
+        assert result is not None
+        assert "name" in result
+
+        result = _validate_params("create", {"name": "Test", "interval": "daily"})
+        assert result is None
+
+    def test_add_tags_requires_token_and_tags(self):
+        """Test add_tags action requires both token and tags."""
+        result = _validate_params("add_tags", {"token": "abc"})
+        assert result is not None
+        assert "tags" in result
+
+        result = _validate_params("add_tags", {"token": "abc", "tags": ["t1"]})
+        assert result is None
+
+
+class TestUnifiedSnitchTool:
+    """Tests for the unified snitch_impl dispatcher."""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Mock the Dead Man's Snitch client."""
+        with patch("mcp_deadmansnitch.server.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_get_client.return_value = mock_client
+            yield mock_client
+
+    async def test_snitch_list_action(self, mock_client):
+        """Test snitch tool with list action."""
+        mock_snitches = [{"token": "abc123", "name": "Test"}]
+        mock_client.list_snitches = AsyncMock(return_value=mock_snitches)
+
+        result = await snitch_impl(action="list")
+
+        assert result["success"] is True
+        assert result["count"] == 1
+        mock_client.list_snitches.assert_called_once_with(tags=None)
+
+    async def test_snitch_list_with_tags(self, mock_client):
+        """Test snitch tool with list action and tags filter."""
+        mock_client.list_snitches = AsyncMock(return_value=[])
+
+        result = await snitch_impl(action="list", tags=["prod"])
+
+        assert result["success"] is True
+        mock_client.list_snitches.assert_called_once_with(tags=["prod"])
+
+    async def test_snitch_get_action(self, mock_client):
+        """Test snitch tool with get action."""
+        mock_snitch = {"token": "abc123", "name": "Test"}
+        mock_client.get_snitch = AsyncMock(return_value=mock_snitch)
+
+        result = await snitch_impl(action="get", token="abc123")
+
+        assert result["success"] is True
+        assert result["snitch"] == mock_snitch
+        mock_client.get_snitch.assert_called_once_with("abc123")
+
+    async def test_snitch_get_missing_token(self, mock_client):
+        """Test snitch tool with get action but missing token."""
+        result = await snitch_impl(action="get")
+
+        assert result["success"] is False
+        assert "requires" in result["error"]
+        assert "token" in result["error"]
+
+    async def test_snitch_create_action(self, mock_client):
+        """Test snitch tool with create action."""
+        mock_snitch = {"token": "new123", "name": "New"}
+        mock_client.create_snitch = AsyncMock(return_value=mock_snitch)
+
+        result = await snitch_impl(
+            action="create",
+            name="New",
+            interval="daily",
+            notes="Test notes",
+        )
+
+        assert result["success"] is True
+        assert result["snitch"] == mock_snitch
+        mock_client.create_snitch.assert_called_once()
+
+    async def test_snitch_create_missing_params(self, mock_client):
+        """Test snitch tool with create action but missing required params."""
+        result = await snitch_impl(action="create", name="Test")
+
+        assert result["success"] is False
+        assert "requires" in result["error"]
+        assert "interval" in result["error"]
+
+    async def test_snitch_update_action(self, mock_client):
+        """Test snitch tool with update action."""
+        mock_snitch = {"token": "abc123", "name": "Updated"}
+        mock_client.update_snitch = AsyncMock(return_value=mock_snitch)
+
+        result = await snitch_impl(action="update", token="abc123", name="Updated")
+
+        assert result["success"] is True
+        mock_client.update_snitch.assert_called_once()
+
+    async def test_snitch_delete_action(self, mock_client):
+        """Test snitch tool with delete action."""
+        mock_client.delete_snitch = AsyncMock(return_value={"status": "deleted"})
+
+        result = await snitch_impl(action="delete", token="abc123")
+
+        assert result["success"] is True
+        mock_client.delete_snitch.assert_called_once_with("abc123")
+
+    async def test_snitch_pause_action(self, mock_client):
+        """Test snitch tool with pause action."""
+        mock_snitch = {"token": "abc123", "status": "paused"}
+        mock_client.pause_snitch = AsyncMock(return_value=mock_snitch)
+
+        result = await snitch_impl(action="pause", token="abc123")
+
+        assert result["success"] is True
+        mock_client.pause_snitch.assert_called_once_with("abc123", None)
+
+    async def test_snitch_pause_with_until(self, mock_client):
+        """Test snitch tool with pause action and until parameter."""
+        mock_snitch = {"token": "abc123", "status": "paused"}
+        mock_client.pause_snitch = AsyncMock(return_value=mock_snitch)
+
+        result = await snitch_impl(
+            action="pause", token="abc123", until="2025-01-25T12:00:00Z"
+        )
+
+        assert result["success"] is True
+        mock_client.pause_snitch.assert_called_once_with(
+            "abc123", "2025-01-25T12:00:00Z"
+        )
+
+    async def test_snitch_unpause_action(self, mock_client):
+        """Test snitch tool with unpause action."""
+        mock_snitch = {"token": "abc123", "status": "healthy"}
+        mock_client.unpause_snitch = AsyncMock(return_value=mock_snitch)
+
+        result = await snitch_impl(action="unpause", token="abc123")
+
+        assert result["success"] is True
+        mock_client.unpause_snitch.assert_called_once_with("abc123")
+
+    async def test_snitch_check_in_action(self, mock_client):
+        """Test snitch tool with check_in action."""
+        mock_client.check_in = AsyncMock(return_value={"status": "ok"})
+
+        result = await snitch_impl(
+            action="check_in", token="abc123", message="All good"
+        )
+
+        assert result["success"] is True
+        mock_client.check_in.assert_called_once_with("abc123", "All good")
+
+    async def test_snitch_add_tags_action(self, mock_client):
+        """Test snitch tool with add_tags action."""
+        mock_snitch = {"token": "abc123", "tags": ["new"]}
+        mock_client.add_tags = AsyncMock(return_value=mock_snitch)
+
+        result = await snitch_impl(action="add_tags", token="abc123", tags=["new"])
+
+        assert result["success"] is True
+        mock_client.add_tags.assert_called_once_with("abc123", ["new"])
+
+    async def test_snitch_remove_tag_action(self, mock_client):
+        """Test snitch tool with remove_tag action."""
+        mock_snitch = {"token": "abc123", "tags": []}
+        mock_client.remove_tag = AsyncMock(return_value=mock_snitch)
+
+        result = await snitch_impl(action="remove_tag", token="abc123", tag="old")
+
+        assert result["success"] is True
+        mock_client.remove_tag.assert_called_once_with("abc123", "old")
+
+    async def test_snitch_unknown_action(self, mock_client):
+        """Test snitch tool with unknown action."""
+        result = await snitch_impl(action="invalid")
+
+        assert result["success"] is False
+        assert "Unknown action" in result["error"]
