@@ -26,12 +26,16 @@ You are going to comprehensively test the Dead Man's Snitch MCP tools in a non-d
 ## Test Execution
 
 ### Step 1: List All Snitches
+
 Use `mcp__deadmansnitch__list_snitches` to get the current list of snitches. Display:
+
 - Total count of snitches
 - A brief summary of existing snitches (names and statuses)
 
 ### Step 2: Create Test Snitch
+
 Use `mcp__deadmansnitch__create_snitch` with these parameters:
+
 - name: "MCP Tool Test Snitch - DELETE ME"
 - interval: "hourly"
 - notes: "This is a temporary test snitch created to verify MCP tools functionality. Safe to delete."
@@ -42,41 +46,55 @@ Note: If tags and alert_email parameters cause validation errors, create the sni
 Save the token from the response for subsequent operations.
 
 ### Step 3: Get Snitch Details
+
 Use `mcp__deadmansnitch__get_snitch` with the token from Step 2 to retrieve full details.
 
 ### Step 4: Update Snitch
+
 Use `mcp__deadmansnitch__update_snitch` to modify:
+
 - name: "MCP Tool Test Snitch - UPDATED"
 - notes: "Updated notes: This snitch has been modified via MCP tools"
 - interval: "daily"
 
 ### Step 5: Add Tags
+
 Use `mcp__deadmansnitch__add_tags` to add:
+
 - tags: ["test", "mcp-verification", "temporary"]
 
 ### Step 6: Remove Tag
+
 Use `mcp__deadmansnitch__remove_tag` to remove:
+
 - tag: "temporary"
 
 ### Step 7: Check In
+
 Use `mcp__deadmansnitch__check_in` with:
+
 - token: (from Step 2)
 - message: "Test check-in from MCP tools verification"
 
 ### Step 8: Pause Snitch
+
 Use `mcp__deadmansnitch__pause_snitch` with:
+
 - token: (from Step 2)
 - until: (calculate an ISO 8601 timestamp 1 hour from now)
 
 ### Step 9: Unpause Snitch
+
 Use `mcp__deadmansnitch__unpause_snitch` with the token from Step 2.
 
 ### Step 10: Delete Test Snitch
+
 Use `mcp__deadmansnitch__delete_snitch` with the token from Step 2 to clean up.
 
 ## Final Report
 
 After completing all steps, provide a summary:
+
 - Which operations succeeded
 - Which operations failed (if any)
 - Any error messages encountered
