@@ -54,46 +54,33 @@ See [NIX.md](NIX.md) for detailed NixOS configuration and declarative usage.
 
 ## Available Tools
 
-### `list_snitches`
+This MCP server exposes a single unified `snitch` tool with an `action` parameter to reduce context usage when connecting to LLMs.
 
-List all snitches, optionally filtered by tags.
+### `snitch`
 
-### `get_snitch`
+Manage Dead Man's Snitch monitors with the following actions:
 
-Get details about a specific snitch using its token.
+| Action | Description | Required Params | Optional Params |
+|--------|-------------|-----------------|-----------------|
+| `list` | List all snitches | - | `tags` (filter) |
+| `get` | Get snitch details | `token` | - |
+| `create` | Create new snitch | `name`, `interval` | `notes`, `tags`, `alert_type`, `alert_email` |
+| `update` | Update snitch | `token` | `name`, `interval`, `notes`, `tags`, `alert_type`, `alert_email` |
+| `delete` | Delete snitch | `token` | - |
+| `pause` | Pause monitoring | `token` | `until` (ISO 8601) |
+| `unpause` | Resume monitoring | `token` | - |
+| `check_in` | Send check-in | `token` | `message` |
+| `add_tags` | Add tags | `token`, `tags` | - |
+| `remove_tag` | Remove a tag | `token`, `tag` | - |
 
-### `check_in`
+**Valid intervals**: `15_minute`, `hourly`, `daily`, `weekly`, `monthly`
 
-Send a check-in to confirm a task completed successfully.
-
-### `create_snitch`
-
-Create a new snitch monitor with intervals: 15_minute, hourly, daily, weekly, or monthly.
+**Valid alert_types**: `basic`, `smart`
 
 **Note on array parameters**: When using MCP tools through Claude, pass arrays directly without JSON encoding:
 
 - ✅ Correct: `tags: ["test", "production"]`
 - ❌ Incorrect: `tags: "[\"test\", \"production\"]"`
-
-### `update_snitch`
-
-Update snitch configuration including name, interval, notes, tags, and alert settings.
-
-### `delete_snitch`
-
-Permanently delete a snitch.
-
-### `pause_snitch`
-
-Temporarily pause monitoring (optionally until a specific time).
-
-### `unpause_snitch`
-
-Resume monitoring for a paused snitch.
-
-### `add_tags` / `remove_tag`
-
-Manage tags for organizing snitches.
 
 ## Example Usage in Claude
 

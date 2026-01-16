@@ -59,18 +59,27 @@ The codebase follows a standard MCP server structure:
 2. **Response Format**: All tools return consistent `{"success": bool, "data": ..., "error": ...}` format
 3. **Error Handling**: API errors are caught and wrapped with context via `@handle_errors` decorator
 4. **Check-in URLs**: Check-ins use separate URLs (https://nosnch.in/{token}) not the main API
-5. **Testability**: Each tool has a separate `_impl` function (e.g., `list_snitches_impl`) that can be unit tested directly without FastMCP decorator overhead
+5. **Testability**: Each action has a separate `_impl` function (e.g., `list_snitches_impl`) that can be unit tested directly without FastMCP decorator overhead
+6. **Unified Tool Design**: Single `snitch` tool with `action` parameter reduces context usage (10 actions → 1 tool definition)
 
-### Available Tools
+### Unified Tool
 
-- `list_snitches`: Get all snitches with optional tag filtering
-- `get_snitch`: Get details for a specific snitch by token
-- `create_snitch`: Create new snitch (required: name, interval)
-- `update_snitch`: Update snitch configuration
-- `delete_snitch`: Delete a snitch
-- `pause_snitch`/`unpause_snitch`: Temporarily pause/resume monitoring
-- `check_in`: Send check-in signal to snitch URL
-- `add_tags`/`remove_tag`: Manage snitch tags
+The server exposes a single `snitch` tool with an `action` parameter:
+
+```python
+snitch(action="list")                    # List all snitches
+snitch(action="get", token="abc123")     # Get snitch details
+snitch(action="create", name="...", interval="daily")  # Create snitch
+snitch(action="update", token="...", name="...")       # Update snitch
+snitch(action="delete", token="...")     # Delete snitch
+snitch(action="pause", token="...")      # Pause monitoring
+snitch(action="unpause", token="...")    # Resume monitoring
+snitch(action="check_in", token="...")   # Send check-in
+snitch(action="add_tags", token="...", tags=["..."])   # Add tags
+snitch(action="remove_tag", token="...", tag="...")    # Remove tag
+```
+
+Parameter validation is handled by `ACTION_REQUIREMENTS` dict and `_validate_params()` function. The `snitch_impl()` dispatcher routes to the appropriate `_impl` function.
 
 ### Valid Intervals
 
