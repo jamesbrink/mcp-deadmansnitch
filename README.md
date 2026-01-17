@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/jamesbrink-mcp-deadmansnitch-badge.png)](https://mseep.ai/app/jamesbrink-mcp-deadmansnitch)
+
 # MCP Dead Man's Snitch
 
 [![PyPI version](https://img.shields.io/pypi/v/mcp-deadmansnitch.svg)](https://pypi.org/project/mcp-deadmansnitch/)
